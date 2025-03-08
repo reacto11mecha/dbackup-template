@@ -1,0 +1,38 @@
+name: Backup Database CI
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 7,17 * * *'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Postgres Dump Backup
+        uses: tj-actions/pg-dump@v3
+        with:
+          database_url: ${{ secrets.DATABASE_URL }}
+          postgresql_version: "16"
+          path: "backups/now.sql" 
+          options: "-O"
+
+      - name: Rename file
+        run: |
+          mv "./backups/now.sql" "./backups/$(TZ="Asia/Jakarta" date +"%d-%B-%Y_%H:%M:%S.sql")"
+
+      - name: Push new backup to backups folder
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          TIMESTAMP=$(TZ="Asia/Jakarta" date +"%Y-%m-%dT%H:%M:%S%z")
+
+          git add backups; git commit -m "[DB BACKUP] $TIMESTAMP"
+          git push
