@@ -1,3 +1,10 @@
+# Secrets Env
+# CHISEL_AUTH
+# CHISEL_SERVER
+# DB_NAME
+# DB_PORT
+# DB_USER_PASS
+
 name: Backup Database CI
 
 on:
@@ -15,10 +22,27 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup Chisel Tunnel
+        env:
+          CHISEL_VERSION: "1.9.1"
+          CHISEL_AUTH: ${{ secrets.CHISEL_AUTH }}
+          CHISEL_SERVER: ${{ secrets.CHISEL_SERVER }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+        run: |
+          echo "Downloading Chisel v${CHISEL_VERSION}..."
+          curl -sL https://github.com/jpillora/chisel/releases/download/v${CHISEL_VERSION}/chisel_${CHISEL_VERSION}_linux_amd64.gz | zcat > chisel
+          chmod +x chisel
+
+          echo "Establishing tunnel..."
+          ./chisel client --auth "$CHISEL_AUTH" "$CHISEL_SERVER" "$DB_PORT:localhost:$DB_PORT" &
+          
+          # 3. Wait for tunnel initialization
+          sleep 5
+
       - name: Postgres Dump Backup
         uses: tj-actions/pg-dump@v3
         with:
-          database_url: ${{ secrets.DATABASE_URL }}
+          database_url: "postgres://${{ secrets.DB_USER_PASS }}@localhost:${{ secrets.DB_PORT }}/${{ secrets.DB_NAME }}"
           postgresql_version: "16"
           path: "backups/now.sql" 
           options: "-O"
