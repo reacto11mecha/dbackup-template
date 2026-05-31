@@ -24,7 +24,7 @@ jobs:
 
       - name: Setup Chisel Tunnel
         env:
-          CHISEL_VERSION: "1.9.1"
+          CHISEL_VERSION: "1.11.5"
           CHISEL_AUTH: ${{ secrets.CHISEL_AUTH }}
           CHISEL_SERVER: ${{ secrets.CHISEL_SERVER }}
           DB_PORT: ${{ secrets.DB_PORT }}
